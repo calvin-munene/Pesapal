@@ -163,16 +163,26 @@ export async function getTransactionStatus(orderTrackingId: string): Promise<{
   }
 
   const data = await res.json();
-  if (data.error) {
-    throw new Error(`Pesapal status error: ${JSON.stringify(data.error)}`);
+  // Pesapal returns errors like `payment_details_not_found` ("Pending Payment")
+  // when the user hasn't completed checkout yet — treat all such cases as PENDING
+  // so the UI can poll cleanly. Only throw on truly unexpected error shapes.
+  const err = data.error;
+  const isPendingErr = err && (
+    err.code === "payment_details_not_found" ||
+    /pending/i.test(err.message || "") ||
+    (!err.code && !err.message)
+  );
+
+  if (err && !isPendingErr) {
+    throw new Error(`Pesapal status error: ${JSON.stringify(err)}`);
   }
 
   return {
-    paymentStatusDescription: data.payment_status_description,
-    paymentMethod: data.payment_method,
-    amount: data.amount,
-    createdDate: data.created_date,
+    paymentStatusDescription: data.payment_status_description || "PENDING",
+    paymentMethod: data.payment_method || "",
+    amount: data.amount || 0,
+    createdDate: data.created_date || "",
     confirmedDate: data.confirmation_code ? data.created_date : undefined,
-    currency: data.currency,
+    currency: data.currency || "KES",
   };
 }

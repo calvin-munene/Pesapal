@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Settings2, CheckCircle2, XCircle, Loader2, Key, Globe, Info } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { CheckCircle2, XCircle, Loader2, Key, Globe, Info, ShieldCheck } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 
 export default function Settings() {
   const [testing, setTesting] = useState(false);
@@ -15,7 +13,7 @@ export default function Settings() {
     try {
       const res = await apiRequest("GET", "/api/pesapal/test-credentials");
       const data = await res.json();
-      setTestResult({ success: true, message: data.message });
+      setTestResult({ success: data.success, message: data.message });
     } catch (err: any) {
       setTestResult({ success: false, message: err.message });
     } finally {
@@ -23,117 +21,92 @@ export default function Settings() {
     }
   }
 
-  const env = import.meta.env.VITE_PESAPAL_ENV || "sandbox";
-  const isSandbox = env !== "production";
-
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-slate-900">Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">Pesapal integration configuration</p>
+        <h1 className="text-3xl sm:text-4xl font-display font-extrabold tracking-tight text-slate-900 dark:text-white">Settings</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Pesapal integration configuration</p>
       </div>
 
-      {/* Credentials Info */}
-      <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="pb-3 border-b border-slate-100">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Key className="w-4.5 h-4.5 text-blue-600" />
-            API Credentials
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Credentials are configured as environment secrets and are not exposed here for security.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4 space-y-4">
-          <div className="rounded-xl bg-slate-50 border border-slate-200 divide-y divide-slate-200">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-slate-700">Consumer Key</p>
-                <p className="text-xs text-slate-400">PESAPAL_CONSUMER_KEY</p>
-              </div>
-              <span className="text-xs font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">••••••••</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-slate-700">Consumer Secret</p>
-                <p className="text-xs text-slate-400">PESAPAL_CONSUMER_SECRET</p>
-              </div>
-              <span className="text-xs font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded">••••••••</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-slate-700">Environment</p>
-                <p className="text-xs text-slate-400">PESAPAL_ENV</p>
-              </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${isSandbox ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-green-50 text-green-700 border-green-200"}`}>
-                {isSandbox ? "Sandbox" : "Production"}
-              </span>
-            </div>
+      <div className="glass rounded-3xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
+            <Key className="w-5 h-5 text-white" strokeWidth={2.4} />
           </div>
+          <div>
+            <h2 className="text-lg font-display font-bold text-slate-900 dark:text-white">API Credentials</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Stored securely as environment secrets</p>
+          </div>
+        </div>
 
-          <div className="flex items-start gap-3 rounded-xl bg-blue-50 border border-blue-100 p-4">
-            <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-            <div className="text-xs text-blue-700 space-y-1">
-              <p className="font-semibold">How to configure your keys</p>
-              <p>Go to the <strong>Secrets</strong> tab in Replit and add:</p>
-              <ul className="list-disc pl-4 space-y-0.5">
-                <li><code className="font-mono bg-blue-100 px-1 rounded">PESAPAL_CONSUMER_KEY</code></li>
-                <li><code className="font-mono bg-blue-100 px-1 rounded">PESAPAL_CONSUMER_SECRET</code></li>
-                <li><code className="font-mono bg-blue-100 px-1 rounded">PESAPAL_ENV</code> — set to <code className="font-mono bg-blue-100 px-1 rounded">production</code> for live payments, or leave blank for sandbox</li>
-              </ul>
-            </div>
-          </div>
+        <div className="glass-pill rounded-2xl divide-y divide-white/30 dark:divide-white/10">
+          <Item label="Consumer Key" sub="PESAPAL_CONSUMER_KEY" right="••••••••" />
+          <Item label="Consumer Secret" sub="PESAPAL_CONSUMER_SECRET" right="••••••••" />
+          <Item label="Environment" sub="PESAPAL_ENV" right={
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+              Production
+            </span>
+          } />
+        </div>
 
-          {/* Test connection */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="border-slate-200 gap-2"
-              onClick={testCredentials}
-              disabled={testing}
-              data-testid="button-test-credentials"
-            >
-              {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
-              Test Connection
-            </Button>
-            {testResult && (
-              <div className={`flex items-center gap-2 text-sm font-medium ${testResult.success ? "text-green-600" : "text-red-600"}`}>
-                {testResult.success
-                  ? <CheckCircle2 className="w-4.5 h-4.5" />
-                  : <XCircle className="w-4.5 h-4.5" />
-                }
-                {testResult.message}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={testCredentials}
+            disabled={testing}
+            data-testid="button-test-credentials"
+            className="liquid-button rounded-full px-5 h-11 inline-flex items-center gap-2 text-sm font-semibold disabled:opacity-70"
+          >
+            {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+            Test connection
+          </button>
+          {testResult && (
+            <div className={cn(
+              "flex items-center gap-2 text-sm font-semibold",
+              testResult.success ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+            )} data-testid="text-test-result">
+              {testResult.success ? <CheckCircle2 className="w-4.5 h-4.5" /> : <XCircle className="w-4.5 h-4.5" />}
+              {testResult.message}
+            </div>
+          )}
+        </div>
+      </div>
 
-      {/* Pesapal endpoints */}
-      <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="pb-3 border-b border-slate-100">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Globe className="w-4.5 h-4.5 text-blue-600" />
-            API Endpoints
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <div className="rounded-xl bg-slate-50 border border-slate-200 divide-y divide-slate-200 text-sm">
-            <div className="px-4 py-3">
-              <p className="font-medium text-slate-700">Sandbox</p>
-              <p className="text-xs font-mono text-slate-500 mt-0.5">https://cybqa.pesapal.com/pesapalv3</p>
-            </div>
-            <div className="px-4 py-3">
-              <p className="font-medium text-slate-700">Production</p>
-              <p className="text-xs font-mono text-slate-500 mt-0.5">https://pay.pesapal.com/v3</p>
-            </div>
-            <div className="px-4 py-3">
-              <p className="font-medium text-slate-700">IPN Callback</p>
-              <p className="text-xs font-mono text-slate-500 mt-0.5">/api/pesapal/ipn</p>
-            </div>
+      <div className="glass rounded-3xl p-6 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <Globe className="w-5 h-5 text-white" strokeWidth={2.4} />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h2 className="text-lg font-display font-bold text-slate-900 dark:text-white">API Endpoints</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Pesapal v3 endpoints in use</p>
+          </div>
+        </div>
+        <div className="glass-pill rounded-2xl divide-y divide-white/30 dark:divide-white/10">
+          <Item label="Production" sub="Live Pesapal v3" right={<code className="text-[11px] font-mono text-slate-600 dark:text-slate-300">pay.pesapal.com/v3</code>} />
+          <Item label="Sandbox" sub="Test Pesapal v3" right={<code className="text-[11px] font-mono text-slate-600 dark:text-slate-300">cybqa.pesapal.com/pesapalv3</code>} />
+          <Item label="IPN Callback" sub="Receives webhooks" right={<code className="text-[11px] font-mono text-slate-600 dark:text-slate-300">/api/pesapal/ipn</code>} />
+        </div>
+      </div>
+
+      <div className="glass-pill rounded-2xl p-4 flex items-start gap-3">
+        <ShieldCheck className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+        <div className="text-xs text-slate-700 dark:text-slate-300">
+          <p className="font-semibold text-slate-900 dark:text-white">Your credentials are safe</p>
+          <p className="mt-1">Keys are stored as encrypted environment secrets and never sent to the browser.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Item({ label, sub, right }: { label: string; sub: string; right: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{sub}</p>
+      </div>
+      <div className="shrink-0">{right}</div>
     </div>
   );
 }

@@ -1,25 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, CreditCard, Filter } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { RefreshCw, CreditCard, ExternalLink } from "lucide-react";
 import type { Transaction } from "@shared/schema";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    COMPLETED: { label: "Completed", className: "bg-green-50 text-green-700 border-green-200" },
-    PENDING: { label: "Pending", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-    FAILED: { label: "Failed", className: "bg-red-50 text-red-700 border-red-200" },
-    INVALID: { label: "Invalid", className: "bg-slate-100 text-slate-600 border-slate-200" },
-    REVERSED: { label: "Reversed", className: "bg-orange-50 text-orange-700 border-orange-200" },
+  const map: Record<string, string> = {
+    COMPLETED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+    PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+    FAILED: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
+    INVALID: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30",
+    REVERSED: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
   };
-  const cfg = map[status] || map.PENDING;
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${cfg.className}`}>
-      {cfg.label}
+    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur-sm", map[status] || map.PENDING)}>
+      {status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
   );
 }
@@ -40,7 +38,7 @@ export default function Transactions() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/transactions"] });
-      toast({ title: "Status refreshed", description: "Transaction status has been updated." });
+      toast({ title: "Status refreshed" });
     },
     onError: (err: Error) => {
       toast({ title: "Failed to check status", description: err.message, variant: "destructive" });
@@ -48,109 +46,98 @@ export default function Transactions() {
   });
 
   const filters = ["ALL", "PENDING", "COMPLETED", "FAILED"];
-
   const filtered = filter === "ALL" ? transactions : transactions.filter((t) => t.status === filter);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-display font-bold text-slate-900">Transactions</h1>
-          <p className="text-sm text-slate-500 mt-1">{transactions.length} total transaction{transactions.length !== 1 ? "s" : ""}</p>
+          <h1 className="text-3xl sm:text-4xl font-display font-extrabold tracking-tight text-slate-900 dark:text-white">Transactions</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{transactions.length} total payment{transactions.length !== 1 ? "s" : ""}</p>
         </div>
-        <Button variant="outline" className="gap-2 border-slate-200" onClick={() => refetch()} data-testid="button-refresh">
+        <button onClick={() => refetch()} data-testid="button-refresh" className="glass-pill rounded-full px-4 py-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
           <RefreshCw className="w-4 h-4" />
           Refresh
-        </Button>
+        </button>
       </div>
 
-      {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {filters.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            data-testid={`filter-${f.toLowerCase()}`}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold border transition-all ${
-              filter === f
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            {f === "ALL" ? `All (${transactions.length})` : `${f.charAt(0) + f.slice(1).toLowerCase()} (${transactions.filter((t) => t.status === f).length})`}
-          </button>
-        ))}
+        {filters.map((f) => {
+          const count = f === "ALL" ? transactions.length : transactions.filter((t) => t.status === f).length;
+          const active = filter === f;
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              data-testid={`filter-${f.toLowerCase()}`}
+              className={cn(
+                "rounded-full px-4 py-2 text-xs font-semibold transition-all",
+                active
+                  ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/30"
+                  : "glass-pill text-slate-700 dark:text-slate-200"
+              )}
+            >
+              {f.charAt(0) + f.slice(1).toLowerCase()} · {count}
+            </button>
+          );
+        })}
       </div>
 
-      <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400 text-sm">Loading transactions...</div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-slate-400" />
-              </div>
-              <p className="text-sm font-medium text-slate-600">No transactions found</p>
-              <p className="text-xs text-slate-400">Try a different filter or initiate a new payment</p>
+      <div className="glass rounded-3xl overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16 text-slate-500 text-sm">Loading transactions…</div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+            <div className="w-14 h-14 rounded-2xl glass-pill flex items-center justify-center">
+              <CreditCard className="w-6 h-6 text-slate-500" />
             </div>
-          ) : (
-            <>
-              {/* Table header */}
-              <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-6 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide rounded-t-xl">
-                <span>Customer</span>
-                <span>Reference</span>
-                <span>Amount</span>
-                <span>Status</span>
-                <span>Actions</span>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {filtered.map((tx) => (
-                  <div key={tx.id} className="flex flex-col md:grid md:grid-cols-[1fr_auto_auto_auto_auto] md:items-center gap-2 md:gap-4 px-6 py-4" data-testid={`row-transaction-${tx.id}`}>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0">
-                        {tx.firstName[0]}{tx.lastName[0]}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800">{tx.firstName} {tx.lastName}</p>
-                        <p className="text-xs text-slate-400 truncate">{tx.email}</p>
-                        <p className="text-xs text-slate-300 md:hidden">{format(new Date(tx.createdAt), "MMM d, yyyy HH:mm")}</p>
-                      </div>
-                    </div>
-                    <div className="text-xs font-mono text-slate-500 whitespace-nowrap">{tx.merchantReference}</div>
-                    <div className="text-sm font-semibold text-slate-900 whitespace-nowrap">
-                      {tx.currency} {tx.amount.toLocaleString()}
-                    </div>
-                    <StatusBadge status={tx.status} />
-                    <div className="flex items-center gap-2">
-                      {tx.orderTrackingId && tx.status === "PENDING" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2.5 text-xs border-slate-200 gap-1"
-                          onClick={() => checkStatus.mutate(tx.orderTrackingId!)}
-                          disabled={checkStatus.isPending}
-                          data-testid={`button-check-status-${tx.id}`}
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Check
-                        </Button>
-                      )}
-                      {tx.pesapalPaymentUrl && tx.status === "PENDING" && (
-                        <a href={tx.pesapalPaymentUrl} target="_blank" rel="noopener noreferrer">
-                          <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                            Pay
-                          </Button>
-                        </a>
-                      )}
-                    </div>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No transactions yet</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Start your first payment from the home page.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/30 dark:divide-white/10">
+            {filtered.map((tx) => (
+              <div key={tx.id} className="flex flex-col md:flex-row md:items-center gap-3 px-5 sm:px-6 py-4" data-testid={`row-transaction-${tx.id}`}>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md">
+                    {tx.firstName[0]}{tx.lastName[0]}
                   </div>
-                ))}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{tx.firstName} {tx.lastName}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{tx.email} · {format(new Date(tx.createdAt), "MMM d, HH:mm")}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 justify-between md:justify-end">
+                  <div className="text-right">
+                    <div className="text-base font-bold text-slate-900 dark:text-white whitespace-nowrap">{tx.currency} {tx.amount.toLocaleString()}</div>
+                    <div className="text-[10px] font-mono text-slate-400">{tx.merchantReference}</div>
+                  </div>
+                  <StatusBadge status={tx.status} />
+                  <div className="flex items-center gap-1.5">
+                    {tx.orderTrackingId && tx.status === "PENDING" && (
+                      <button
+                        onClick={() => checkStatus.mutate(tx.orderTrackingId!)}
+                        disabled={checkStatus.isPending}
+                        data-testid={`button-check-status-${tx.id}`}
+                        className="glass-pill rounded-full h-8 w-8 inline-flex items-center justify-center text-slate-700 dark:text-slate-200"
+                        title="Check status"
+                      >
+                        <RefreshCw className={cn("w-3.5 h-3.5", checkStatus.isPending && "animate-spin")} />
+                      </button>
+                    )}
+                    {tx.pesapalPaymentUrl && tx.status === "PENDING" && (
+                      <a href={tx.pesapalPaymentUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-pay-${tx.id}`}
+                         className="glass-pill rounded-full h-8 w-8 inline-flex items-center justify-center text-slate-700 dark:text-slate-200" title="Open checkout">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

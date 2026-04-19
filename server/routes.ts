@@ -58,6 +58,7 @@ export async function registerRoutes(
         lastName: z.string().min(1),
         email: z.string().email(),
         phone: z.string().optional(),
+        paymentMethod: z.string().optional(),
       });
 
       const parsed = bodySchema.safeParse(req.body);
@@ -65,7 +66,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid request", errors: parsed.error.flatten() });
       }
 
-      const { amount, currency, description, firstName, lastName, email, phone } = parsed.data;
+      const { amount, currency, description, firstName, lastName, email, phone, paymentMethod } = parsed.data;
 
       const merchantReference = `PAY-${randomUUID().slice(0, 8).toUpperCase()}`;
       const ipnId = await ensureIpnRegistered(req);
@@ -98,6 +99,7 @@ export async function registerRoutes(
       await storage.updateTransaction(tx.id, {
         orderTrackingId,
         pesapalPaymentUrl: redirectUrl,
+        ...(paymentMethod ? { paymentMethod } : {}),
       });
 
       res.json({
@@ -127,7 +129,7 @@ export async function registerRoutes(
         if (tx) {
           await storage.updateTransaction(tx.id, {
             status,
-            paymentMethod: statusData.paymentMethod,
+            ...(statusData.paymentMethod ? { paymentMethod: statusData.paymentMethod } : {}),
             confirmedAt: status === "COMPLETED" ? new Date() : undefined,
           });
         }
@@ -151,7 +153,7 @@ export async function registerRoutes(
         const status = statusData.paymentStatusDescription.toUpperCase() as any;
         await storage.updateTransaction(tx.id, {
           status,
-          paymentMethod: statusData.paymentMethod,
+          ...(statusData.paymentMethod ? { paymentMethod: statusData.paymentMethod } : {}),
           confirmedAt: status === "COMPLETED" ? new Date() : undefined,
         });
       }
