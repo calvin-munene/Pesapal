@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    image: payflow:latest
+    container_name: payflow-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgres://payflow:${POSTGRES_PASSWORD:-payflow}@db:5432/payflow
+      PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY}
+      PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET}
+      PESAPAL_ENV: ${PESAPAL_ENV:-production}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npm run db:push && node dist/index.cjs"
+
+  db:
+    image: postgres:16-alpine
+    container_name: payflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: payflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-payflow}
+      POSTGRES_DB: payflow
+    volumes:
+      - payflow-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  payflow-pgdata:

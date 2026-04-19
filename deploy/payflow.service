@@ -1,0 +1,29 @@
+[Unit]
+Description=PayFlow - Pesapal Payments Dashboard
+Documentation=https://github.com/calvin-munene/Pesapal
+After=network.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=payflow
+Group=payflow
+WorkingDirectory=/opt/payflow
+EnvironmentFile=/opt/payflow/.env
+Environment=NODE_ENV=production
+Environment=PORT=5000
+ExecStart=/usr/bin/node /opt/payflow/dist/index.cjs
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=payflow
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
