@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTransactionSchema } from "@shared/schema";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 import {
   getAccessToken,
   registerIPN,
@@ -68,7 +67,11 @@ export async function registerRoutes(
 
       const { amount, currency, description, firstName, lastName, email, phone, paymentMethod } = parsed.data;
 
-      const merchantReference = `PAY-${randomUUID().slice(0, 8).toUpperCase()}`;
+      // Short M-Pesa-style reference: 10 uppercase alphanumeric chars (e.g. "TGH7K2NQ4P")
+      const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // unambiguous chars (no 0/O/1/I)
+      const merchantReference = Array.from({ length: 10 }, () =>
+        ALPHA[Math.floor(Math.random() * ALPHA.length)]
+      ).join("");
       const ipnId = await ensureIpnRegistered(req);
       const callbackUrl = `${getBaseUrl(req)}/payment/callback`;
 
