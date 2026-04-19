@@ -98,19 +98,15 @@ export default function PaymentCallback() {
 
           <div className="flex flex-col gap-2">
             <Link href="/transactions">
-              <a>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm gap-2" data-testid="button-view-transactions">
-                  View Transactions
-                </Button>
-              </a>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm gap-2" data-testid="button-view-transactions">
+                View Transactions
+              </Button>
             </Link>
             <Link href="/pay">
-              <a>
-                <Button variant="outline" className="w-full border-slate-200 gap-2">
-                  <ArrowLeft className="w-4 h-4" />
-                  New Payment
-                </Button>
-              </a>
+              <Button variant="outline" className="w-full border-slate-200 gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                New Payment
+              </Button>
             </Link>
           </div>
         </CardContent>

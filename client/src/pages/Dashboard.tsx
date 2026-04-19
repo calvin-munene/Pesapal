@@ -76,12 +76,10 @@ export default function Dashboard() {
           <p className="text-sm text-slate-500 mt-1">Overview of your Pesapal transactions</p>
         </div>
         <Link href="/pay">
-          <a>
-            <Button className="bg-blue-600 hover:bg-blue-700 gap-2 shadow-sm" data-testid="button-new-payment">
-              <CreditCard className="w-4 h-4" />
-              New Payment
-            </Button>
-          </a>
+          <Button className="bg-blue-600 hover:bg-blue-700 gap-2 shadow-sm" data-testid="button-new-payment">
+            <CreditCard className="w-4 h-4" />
+            New Payment
+          </Button>
         </Link>
       </div>
 
@@ -105,10 +103,8 @@ export default function Dashboard() {
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-slate-100">
           <CardTitle className="text-base font-semibold text-slate-800">Recent Transactions</CardTitle>
-          <Link href="/transactions">
-            <a className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
-              View all <ArrowRight className="w-3.5 h-3.5" />
-            </a>
+          <Link href="/transactions" className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
+            View all <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </CardHeader>
         <CardContent className="p-0">
